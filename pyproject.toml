@@ -1,0 +1,25 @@
+[project]
+name = "slackpresent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.3.1",
+    "httpx>=0.28.1",
+    "python-dotenv>=1.2.1",
+    "rich>=14.3.2",
+]
+
+[project.scripts]
+slack = "slack_cli.app:run"
+
+[build-system]
+requires = ["hatchling>=1.26.0"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["slack_cli"]
