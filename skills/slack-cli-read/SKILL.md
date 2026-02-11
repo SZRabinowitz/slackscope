@@ -24,6 +24,8 @@ Use this skill to read Slack content via the global `slack` command.
 
 ## Command Map
 
+- Login bootstrap (interactive): `slack auth login <workspace>`
+- Auth diagnostics: `slack auth status`
 - Verify auth/workspace: `slack me`
 - List all conversations: `slack chat list`
 - List unread conversations: `slack chat list --unread`
@@ -52,6 +54,7 @@ Use this skill to read Slack content via the global `slack` command.
 - Use pretty output for human reading.
 - Use `--format json` or `--format jsonl` for structured parsing.
 - Use `slack api call`/`slack api curl` only when typed commands do not cover the needed endpoint behavior.
+- If auth fails, run `slack auth status` before retrying read commands.
 
 ## Response Guidance
 

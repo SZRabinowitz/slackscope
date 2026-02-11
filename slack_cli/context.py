@@ -20,8 +20,8 @@ OutputFormat = Literal["pretty", "json", "jsonl", "tsv"]
 class AppContext:
     """Container for shared runtime objects."""
 
-    settings: Settings
-    client: "SlackClient"
+    settings: Settings | None
+    client: "SlackClient | None"
     console: Console
     output_format: OutputFormat
     fields: list[str] | None

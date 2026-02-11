@@ -29,7 +29,7 @@ V1 is read-only. Sending messages will be added later.
 - [x] Attachment fallback text implemented (`📎 <name> (<type>, <size>)`, including file-only messages)
 - [x] List views aligned for readability (fixed metadata columns + spaced preview text)
 - [x] Installed entrypoint wired (`uv run slack ...`)
-- [ ] Auth commands (`auth login`, `auth status`, `auth logout`) (approved, pending implementation)
+- [x] Auth commands (`auth login`, `auth status`, `auth logout`) implemented
 - [x] API passthrough commands (`api call`, `api curl`) implemented
 - [ ] README command examples and usage guide (pending)
 - [ ] Send/reply/reaction features (out of scope for V1)
@@ -80,7 +80,7 @@ Resources:
 - `chat`
 - `dm`
 - `thread`
-- `auth` (approved, pending implementation)
+- `auth`
 - `api`
 
 Target types accepted where relevant:
@@ -92,6 +92,9 @@ Target types accepted where relevant:
 
 ```bash
 slack me
+slack auth login <workspace>
+slack auth status
+slack auth logout [--yes]
 slack users list [--query TEXT] [--limit N]
 slack chat list [--type channel|private|dm|mpim|all] [--unread] [--limit N]
 slack chat show <chat>
@@ -102,7 +105,7 @@ slack dm history <@user|dm_id> [--limit N] [--since DUR|TS] [--until DUR|TS]
 slack thread show <chat> <ts>
 ```
 
-## Approved Commands (Pending Implementation)
+## Advanced Commands
 
 ```bash
 slack auth login <workspace>

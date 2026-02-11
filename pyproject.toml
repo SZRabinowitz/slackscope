@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "click>=8.3.1",
     "httpx>=0.28.1",
+    "pydoll-python>=2.17.0",
     "python-dotenv>=1.2.1",
     "rich>=14.3.2",
 ]

@@ -11,6 +11,7 @@ from rich.console import Console
 
 from slack_cli.client import SlackClient
 from slack_cli.commands.api import api_group
+from slack_cli.commands.auth import auth_group
 from slack_cli.commands.chat import chat_group
 from slack_cli.commands.dm import dm_group
 from slack_cli.commands.me import me_command
@@ -42,12 +43,18 @@ def main(
 ) -> None:
     """Read-first Slack CLI bridge."""
 
+    auth_mode = _first_resource_arg(sys.argv) == "auth"
+
     parsed_fields = [
         part.strip() for part in (fields or "").split(",") if part.strip()
     ] or None
-    settings = load_settings()
+    settings = None
+    client = None
 
-    client = SlackClient(settings=settings, verbose=verbose)
+    if not auth_mode:
+        settings = load_settings()
+        client = SlackClient(settings=settings, verbose=verbose)
+
     console = Console(soft_wrap=True)
     normalized_output = cast(OutputFormat, output_format.lower())
 
@@ -61,7 +68,8 @@ def main(
     )
 
     ctx.obj = app_context
-    ctx.call_on_close(client.close)
+    if client is not None:
+        ctx.call_on_close(client.close)
 
 
 @main.result_callback()
@@ -75,6 +83,7 @@ main.add_command(chat_group)
 main.add_command(dm_group)
 main.add_command(thread_group)
 main.add_command(api_group)
+main.add_command(auth_group)
 
 
 def run() -> None:
@@ -99,3 +108,15 @@ def run() -> None:
     except click.ClickException as exc:
         exc.show()
         raise SystemExit(exc.exit_code)
+
+
+def _first_resource_arg(argv: list[str]) -> str | None:
+    """Return first non-option CLI token after executable name."""
+
+    for token in argv[1:]:
+        if token == "--":
+            break
+        if token.startswith("-"):
+            continue
+        return token
+    return None

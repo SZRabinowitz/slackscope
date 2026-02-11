@@ -5,16 +5,19 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 from slack_cli.errors import ConfigError
 
 try:
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv  # type: ignore[import-not-found]
 except Exception:  # pragma: no cover - optional import fallback
     load_dotenv = None
 
 
 WORKSPACE_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+DEFAULT_ENV_FILE = Path.home() / ".config" / "slack" / "slack.env"
+ENV_FILE_OVERRIDE_VAR = "SLACK_ENV_FILE"
 
 
 @dataclass(frozen=True)
@@ -37,15 +40,44 @@ def _required(name: str) -> str:
         return value
     raise ConfigError(
         f"Missing required environment variable: {name}. "
-        "Set it in your shell or .env file."
+        "Set it in your shell, in ~/.config/slack/slack.env, "
+        "or in local ./slack.env or ./.env."
     )
+
+
+def _load_env_files() -> None:
+    if load_dotenv is None:
+        return
+
+    override = (os.getenv(ENV_FILE_OVERRIDE_VAR) or "").strip()
+    if override:
+        override_path = Path(override).expanduser()
+        if not override_path.is_file():
+            raise ConfigError(
+                f"{ENV_FILE_OVERRIDE_VAR} points to a missing file: {override_path}"
+            )
+        load_dotenv(dotenv_path=override_path, override=False)
+        return
+
+    cwd = Path.cwd()
+    candidates = [
+        DEFAULT_ENV_FILE,
+        cwd / "slack.env",
+        cwd / ".env",
+    ]
+
+    for path in candidates:
+        if path.is_file():
+            load_dotenv(dotenv_path=path, override=False)
+            if path == DEFAULT_ENV_FILE:
+                return
+            break
 
 
 def load_settings() -> Settings:
     """Load and validate runtime settings from environment variables."""
 
-    if load_dotenv is not None:
-        load_dotenv()
+    _load_env_files()
 
     workspace = _required("SLACK_WORKSPACE")
     if not WORKSPACE_RE.match(workspace):
