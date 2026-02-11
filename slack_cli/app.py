@@ -10,6 +10,7 @@ import click
 from rich.console import Console
 
 from slack_cli.client import SlackClient
+from slack_cli.commands.api import api_group
 from slack_cli.commands.chat import chat_group
 from slack_cli.commands.dm import dm_group
 from slack_cli.commands.me import me_command
@@ -73,6 +74,7 @@ main.add_command(users_group)
 main.add_command(chat_group)
 main.add_command(dm_group)
 main.add_command(thread_group)
+main.add_command(api_group)
 
 
 def run() -> None:

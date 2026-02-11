@@ -29,6 +29,8 @@ V1 is read-only. Sending messages will be added later.
 - [x] Attachment fallback text implemented (`📎 <name> (<type>, <size>)`, including file-only messages)
 - [x] List views aligned for readability (fixed metadata columns + spaced preview text)
 - [x] Installed entrypoint wired (`uv run slack ...`)
+- [ ] Auth commands (`auth login`, `auth status`, `auth logout`) (approved, pending implementation)
+- [x] API passthrough commands (`api call`, `api curl`) implemented
 - [ ] README command examples and usage guide (pending)
 - [ ] Send/reply/reaction features (out of scope for V1)
 
@@ -48,6 +50,14 @@ Required env:
 - `SLACK_WORKSPACE` (e.g. `flawlessai`)
 - `TOKEN` (Slack token)
 - `D_COOKIE` (cookie value for `d`)
+
+Env file discovery order for CLI runs:
+1. `~/.config/slack/slack.env` (primary)
+2. `./slack.env` (local fallback)
+3. `./.env` (local fallback)
+
+Optional override:
+- `SLACK_ENV_FILE` (explicit dotenv path)
 
 Request shape:
 - API base: `https://<workspace>.slack.com/api/<method>`
@@ -70,6 +80,8 @@ Resources:
 - `chat`
 - `dm`
 - `thread`
+- `auth` (approved, pending implementation)
+- `api`
 
 Target types accepted where relevant:
 - `#channel`
@@ -89,6 +101,66 @@ slack dm list [--unread] [--limit N]
 slack dm history <@user|dm_id> [--limit N] [--since DUR|TS] [--until DUR|TS]
 slack thread show <chat> <ts>
 ```
+
+## Approved Commands (Pending Implementation)
+
+```bash
+slack auth login <workspace>
+slack auth status
+slack auth logout [--yes]
+```
+
+### Auth Command Design
+
+`auth login`:
+- requires workspace input (`<workspace>`); user input is the source-of-intent workspace
+- opens Chrome directly to the requested workspace for interactive Slack sign-in
+- captures auth values from browser session:
+  - `TOKEN`
+  - `D_COOKIE`
+- derives observed workspace from browser/API traffic for verification
+- if observed workspace does not match requested workspace, abort with a clear mismatch error
+- sets `SLACK_WORKSPACE` from the requested workspace after verification
+- validates captured values via `auth.test`
+- saves validated credentials to `~/.config/slack/slack.env`
+- if auto-capture is incomplete, prompts for missing values
+- never prints secret values
+
+`auth status`:
+- checks credential file presence and required variables
+- runs `auth.test` when credentials are available
+- reports concise auth/config status without exposing secrets
+
+`auth logout`:
+- removes/clears local credential file at `~/.config/slack/slack.env`
+- supports non-interactive confirmation via `--yes`
+
+### API Passthrough Design
+
+Implemented commands:
+
+```bash
+slack api call <endpoint> [-X METHOD] [-p key=value ...]
+slack api curl <endpoint> [--print-command] [--print-only] -- [extra curl args]
+```
+
+- `api call` and `api curl` are expert/debug passthrough interfaces.
+- Both commands output raw response payloads (no normalization, no pretty schema formatting).
+- Global output transforms (`--format`, `--fields`) do not apply to these commands.
+- No read/write endpoint gating is applied for `api` commands.
+
+`api call`:
+- accepts repeatable params via `-p/--param key=value`
+- supports explicit HTTP method via `-X/--method` (default `POST`)
+
+`api curl`:
+- wraps auth/base endpoint setup for curl-compatible workflows
+- supports optional command preview before execution
+  - `--print-command`: print redacted command, then execute
+  - `--print-only`: print redacted command, do not execute
+- command preview redaction uses full-string find/replace for secrets:
+  - token -> `<TOKEN_REDACTED>`
+  - cookie `d` -> `<D_COOKIE_REDACTED>`
 
 ## Defaults
 
@@ -251,6 +323,7 @@ Responsibilities:
 
 ## Future (Out of Scope for V1)
 
+- notifications list support
 - send messages (`msg send` / `chat send`)
 - reply to thread
 - reactions

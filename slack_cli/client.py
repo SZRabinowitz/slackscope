@@ -32,6 +32,25 @@ class SlackClient:
     def close(self) -> None:
         self._http.close()
 
+    def api_url(self, endpoint: str) -> str:
+        """Resolve method/path input into a full Slack API URL."""
+
+        raw = endpoint.strip()
+        if not raw:
+            raise SlackCLIError("API endpoint cannot be empty")
+
+        if raw.startswith("http://") or raw.startswith("https://"):
+            return raw
+
+        normalized = raw.lstrip("/")
+        if normalized.startswith("api/"):
+            normalized = normalized[4:]
+
+        if not normalized:
+            raise SlackCLIError("API endpoint cannot be empty")
+
+        return f"{self.settings.api_base}/{normalized}"
+
     def call(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         payload = dict(params or {})
         payload.setdefault("token", self.settings.token)
@@ -77,6 +96,50 @@ class SlackClient:
         if last_error:
             raise SlackCLIError(str(last_error))
         raise SlackCLIError(f"Slack API request failed for {method}")
+
+    def call_raw(
+        self,
+        endpoint: str,
+        *,
+        http_method: str,
+        params: dict[str, Any] | None = None,
+    ) -> str:
+        """Call a Slack API endpoint and return raw response body."""
+
+        method = http_method.upper().strip() or "POST"
+        url = self.api_url(endpoint)
+
+        payload = dict(params or {})
+        payload.setdefault("token", self.settings.token)
+
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries + 1):
+            request_kwargs: dict[str, Any] = (
+                {"params": payload} if method == "GET" else {"data": payload}
+            )
+            try:
+                response = self._http.request(method, url, **request_kwargs)
+            except httpx.RequestError as exc:
+                last_error = exc
+                if attempt < self.max_retries:
+                    time.sleep(0.4 * (attempt + 1))
+                    continue
+                raise SlackCLIError(f"Network error calling Slack API: {exc}") from exc
+
+            if response.status_code == 429 and attempt < self.max_retries:
+                retry_after = int(response.headers.get("Retry-After", "1"))
+                time.sleep(max(retry_after, 1))
+                continue
+
+            if response.status_code >= 500 and attempt < self.max_retries:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+
+            return response.text
+
+        if last_error:
+            raise SlackCLIError(str(last_error))
+        raise SlackCLIError(f"Slack API request failed for {endpoint}")
 
     def _paginate(
         self,
