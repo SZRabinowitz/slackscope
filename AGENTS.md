@@ -27,6 +27,7 @@ A Python CLI (`slack`) wrapping the Slack Web API to list channels/DMs and read 
 
 ## Workflow Rules
 
+- Never make code or file edits unless the user explicitly asks for edits.
 - Spec first, then implementation.
 - When the user requests a feature:
   1. Design it first.

@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlparse
 import click
 
 from slack_cli.client import SlackClient
-from slack_cli.config import DEFAULT_ENV_FILE, Settings, WORKSPACE_RE
+from slack_cli.config import DEFAULT_ENV_FILE, WORKSPACE_RE, Settings
 from slack_cli.context import AppContext
 from slack_cli.errors import ConfigError, SlackCLIError
 from slack_cli.render import emit_data
