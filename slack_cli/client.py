@@ -22,7 +22,9 @@ class SlackClient:
             base_url=settings.api_base,
             timeout=settings.timeout_seconds,
             cookies={"d": settings.d_cookie},
-            headers={"User-Agent": "slackpresent-cli/0.1"},
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+            },
         )
         self._users_cache: list[dict[str, Any]] | None = None
         self._users_map_cache: dict[str, dict[str, Any]] | None = None
